@@ -1,0 +1,9 @@
+functions-framework 
+requests 
+google-generativeai 
+python-dotenv 
+pydantic 
+PyPDF2 
+python-multipart 
+aiohttp 
+typing-extensions 
