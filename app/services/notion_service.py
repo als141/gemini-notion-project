@@ -196,3 +196,49 @@ class NotionService:
         
         # 最初のファイルを返す（通常は1つのPDFファイル）
         return files[0]
+
+    def get_audio_file_from_page(self, page: NotionPage) -> Optional[NotionFile]:
+        """
+        ページから音声ファイルを取得
+
+        Args:
+            page: NotionPageオブジェクト
+
+        Returns:
+            NotionFileオブジェクト、見つからない場合はNone
+        """
+        files = page.get_files(config.AUDIO_FILE_PROPERTY_NAME)
+
+        if not files:
+            logger.info(f"No audio files found in property '{config.AUDIO_FILE_PROPERTY_NAME}'")
+            return None
+
+        # 最初の音声ファイルを返す
+        logger.info(f"Found audio file: {files[0].name}")
+        return files[0]
+
+    def _create_rich_text_payload(self, content: str) -> List[Dict[str, Any]]:
+        """リッチテキストペイロードを作成"""
+        return [{
+            'type': 'text',
+            'text': {'content': content}
+        }]
+
+    def _create_block_payload(self, block_type: str, content: Any, **kwargs) -> Dict[str, Any]:
+        """指定されたタイプのブロックペイロードを作成"""
+        payload = {
+            'object': 'block',
+            'type': block_type,
+            block_type: content
+        }
+        # kwargs を使って追加のプロパティを設定（例: color, is_toggleable）
+        if kwargs:
+            if block_type in payload and isinstance(payload[block_type], dict):
+                payload[block_type].update(kwargs)
+            else:
+                 # block_typeキーが存在しない、またはdictでない場合は、kwargsを直接トップレベルにマージ
+                 # これはAPI仕様に依存するため、注意が必要
+                 logger.warning(f"Could not merge kwargs into {block_type} payload structure. Merging at top level.")
+                 payload.update(kwargs) # API仕様によっては動作しない可能性あり
+
+        return payload

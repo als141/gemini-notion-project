@@ -20,9 +20,11 @@ class Config:
     # Notion プロパティ名
     UNIQUE_ID_PROPERTY_NAME: str = os.getenv('UNIQUE_ID_PROPERTY_NAME', 'ID')
     FILE_PROPERTY_NAME: str = os.getenv('FILE_PROPERTY_NAME', 'スライドPDF')
+    AUDIO_FILE_PROPERTY_NAME: str = os.getenv('AUDIO_FILE_PROPERTY_NAME', '録音ファイル')
     
     # その他の設定
     SUMMARY_TOGGLE_H3_TITLE: str = os.getenv('SUMMARY_TOGGLE_H3_TITLE', 'Summary')
+    MINUTES_TOGGLE_H3_TITLE: str = os.getenv('MINUTES_TOGGLE_H3_TITLE', '議事録')
     
     @classmethod
     def validate(cls) -> None:

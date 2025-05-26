@@ -92,6 +92,8 @@ def handle_get_request(request: Request, headers: Dict[str, str]) -> tuple:
             return handle_health_check(headers)
         elif action == 'summary':
             return handle_pdf_summary_request(unique_id, headers)
+        elif action == 'minutes':
+            return handle_pdf_and_audio_minutes_request(unique_id, headers)
         else:
             return jsonify({
                 'success': False,
@@ -119,6 +121,8 @@ def handle_post_request(request: Request, headers: Dict[str, str]) -> tuple:
             return handle_health_check(headers)
         elif action == 'summary':
             return handle_pdf_summary_request(unique_id, headers)
+        elif action == 'minutes':
+            return handle_pdf_and_audio_minutes_request(unique_id, headers)
         else:
             return jsonify({
                 'success': False,
@@ -145,6 +149,24 @@ def handle_pdf_summary_request(unique_id: str, headers: Dict[str, str]) -> tuple
         
     except Exception as e:
         logger.error(f"Error in PDF summary processing: {str(e)}")
+        return handle_error_response(e, headers)
+
+def handle_pdf_and_audio_minutes_request(unique_id: str, headers: Dict[str, str]) -> tuple:
+    """PDFと音声による議事録作成リクエストの処理"""
+    if not unique_id:
+        return jsonify({
+            'success': False,
+            'error': 'Missing required parameter: uid (unique_id)'
+        }), 400, headers
+    
+    try:
+        handler = get_pdf_handler()
+        result = handler.process_pdf_and_audio_minutes(unique_id)
+        
+        return jsonify(result), 200, headers
+        
+    except Exception as e:
+        logger.error(f"Error in PDF and audio minutes processing: {str(e)}")
         return handle_error_response(e, headers)
 
 def handle_health_check(headers: Dict[str, str]) -> tuple:
@@ -236,6 +258,7 @@ if __name__ == '__main__':
     print("Starting local development server...")
     print("Test URLs:")
     print("- Health check: http://localhost:8080/?action=health")
-    print("- PDF summary: http://localhost:8080/?uid=YOUR_UNIQUE_ID")
+    print("- PDF summary: http://localhost:8080/?uid=YOUR_UNIQUE_ID&action=summary")
+    print("- PDF & Audio minutes: http://localhost:8080/?uid=YOUR_UNIQUE_ID&action=minutes")
     
     app.run(host='0.0.0.0', port=8080, debug=True)
