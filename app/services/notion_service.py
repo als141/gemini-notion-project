@@ -196,3 +196,42 @@ class NotionService:
         
         # 最初のファイルを返す（通常は1つのPDFファイル）
         return files[0]
+    
+    def get_audio_file_from_page(self, page: NotionPage) -> Optional[NotionFile]:
+        """
+        ページから録音ファイルを取得
+        
+        Args:
+            page: NotionPageオブジェクト
+            
+        Returns:
+            NotionFileオブジェクト、見つからない場合はNone
+        """
+        try:
+            files = page.get_files(config.AUDIO_FILE_PROPERTY_NAME)
+            
+            if not files:
+                logger.info(f"No audio files found in property '{config.AUDIO_FILE_PROPERTY_NAME}'")
+                return None
+            
+            # 最初のファイルを返す（通常は1つの録音ファイル）
+            return files[0]
+        except Exception as e:
+            logger.warning(f"Failed to get audio file: {e}")
+            return None
+    
+    def check_if_page_has_audio_file(self, page: NotionPage) -> bool:
+        """
+        ページに録音ファイルがあるかチェック
+        
+        Args:
+            page: NotionPageオブジェクト
+            
+        Returns:
+            録音ファイルがある場合はTrue
+        """
+        try:
+            audio_file = self.get_audio_file_from_page(page)
+            return audio_file is not None
+        except Exception:
+            return False
