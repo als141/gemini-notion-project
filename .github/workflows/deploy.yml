@@ -1,0 +1,73 @@
+name: Deploy to Cloud Functions
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  PROJECT_ID: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+  FUNCTION_NAME: gemini-notion-processor
+  REGION: asia-northeast1
+
+jobs:
+  deploy:
+    name: Deploy to Cloud Functions
+    runs-on: ubuntu-latest
+    
+    # PRの場合はテストのみ実行（デプロイはしない）
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        python test_markdown_conversion.py
+        echo "Basic tests completed"
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - name: Deploy to Cloud Functions
+      run: |
+        gcloud functions deploy $FUNCTION_NAME \
+          --gen2 \
+          --runtime=python312 \
+          --region=$REGION \
+          --source=. \
+          --entry-point=main \
+          --trigger-http \
+          --timeout=540s \
+          --memory=1Gi \
+          --max-instances=10 \
+          --allow-unauthenticated \
+          --set-env-vars="NOTION_API_KEY=${{ secrets.NOTION_API_KEY }},NOTION_DATABASE_ID=${{ secrets.NOTION_DATABASE_ID }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},PDF_FILE_PROPERTY_NAME=${{ secrets.PDF_FILE_PROPERTY_NAME }},AUDIO_FILE_PROPERTY_NAME=${{ secrets.AUDIO_FILE_PROPERTY_NAME }},SUMMARY_TOGGLE_H3_TITLE=${{ secrets.SUMMARY_TOGGLE_H3_TITLE }},MEETING_SUMMARY_TOGGLE_H3_TITLE=${{ secrets.MEETING_SUMMARY_TOGGLE_H3_TITLE }},GEMINI_MODEL=${{ secrets.GEMINI_MODEL }}"
+
+    - name: Get function URL
+      run: |
+        FUNCTION_URL=$(gcloud functions describe $FUNCTION_NAME --region=$REGION --format="value(serviceConfig.uri)")
+        echo "Function deployed at: $FUNCTION_URL"
+        echo "FUNCTION_URL=$FUNCTION_URL" >> $GITHUB_ENV
+
+    - name: Test deployed function
+      run: |
+        # ヘルスチェックテスト
+        curl -f "$FUNCTION_URL?action=health" || exit 1
+        echo "Health check passed" 

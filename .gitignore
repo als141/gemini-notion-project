@@ -153,3 +153,16 @@ Thumbs.db
 temp/
 logs/
 config/secrets.json
+
+# Google Cloud Functions / Cloud Build
+.gcloud/
+.cloudconfig
+key.json
+service-account-key.json
+*-service-account-key.json
+.deploy/
+.functions-framework*
+
+# Cloud Build artifacts
+cloudbuild.logs
+.cloudbuild/
